@@ -24,7 +24,8 @@ This project allows users to play piano sounds by clicking the keys with a mouse
 
 ## 📸 Demo Screenshot
 
-(Add a screenshot of your project here if possible)
+<img width="1623" height="894" alt="image" src="https://github.com/user-attachments/assets/e7f837bc-0b7b-4102-926f-0b7b8d9e97ff" />
+
 
 ---
 
