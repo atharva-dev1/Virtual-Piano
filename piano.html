@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Piano</title>
+    <!-- We'll use the Tone.js library to easily create synthesizer sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Helvetica Neue', sans-serif;
+            user-select: none; /* Prevent text selection on keys */
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .status-display {
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #888;
+            min-height: 25px;
+        }
+
+        .piano {
+            display: flex;
+            position: relative;
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3), 0 6px 6px rgba(0,0,0,0.25);
+        }
+
+        .key {
+            border: 1px solid #222;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            font-size: 1.2em;
+            color: #555;
+            transition: background-color 0.1s ease;
+        }
+
+        .white {
+            width: 60px;
+            height: 240px;
+            background: linear-gradient(to bottom, #fff, #eee);
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .white.active {
+            background: linear-gradient(to bottom, #00c6ff, #0072ff);
+            color: white;
+        }
+
+        .black {
+            width: 40px;
+            height: 150px;
+            background: linear-gradient(to bottom, #333, #000);
+            position: absolute;
+            margin-left: -20px;
+            z-index: 2;
+            color: #ccc;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .black.active {
+            background: linear-gradient(to bottom, #00c6ff, #0072ff);
+            box-shadow: 0 0 10px #00c6ff;
+        }
+
+        /* Positioning black keys */
+        .key[data-note="C#4"] { left: 60px; }
+        .key[data-note="D#4"] { left: 120px; }
+        .key[data-note="F#4"] { left: 240px; }
+        .key[data-note="G#4"] { left: 300px; }
+        .key[data-note="A#4"] { left: 360px; }
+        .key[data-note="C#5"] { left: 480px; }
+        .key[data-note="D#5"] { left: 540px; }
+
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .record-btn {
+            background-color: #dc3545;
+        }
+        .record-btn.recording {
+            background-color: #007bff;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .play-btn {
+            background-color: #28a745;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Virtual Piano</h1>
+    <div class="status-display" id="statusDisplay">Press a key to play</div>
+
+    <div class="piano">
+        <!-- White Keys -->
+        <div data-note="C4" data-key="a" class="key white">A</div>
+        <div data-note="D4" data-key="s" class="key white">S</div>
+        <div data-note="E4" data-key="d" class="key white">D</div>
+        <div data-note="F4" data-key="f" class="key white">F</div>
+        <div data-note="G4" data-key="g" class="key white">G</div>
+        <div data-note="A4" data-key="h" class="key white">H</div>
+        <div data-note="B4" data-key="j" class="key white">J</div>
+        <div data-note="C5" data-key="k" class="key white">K</div>
+        <div data-note="D5" data-key="l" class="key white">L</div>
+        <div data-note="E5" data-key=";" class="key white">;</div>
+
+        <!-- Black Keys -->
+        <div data-note="C#4" data-key="w" class="key black">W</div>
+        <div data-note="D#4" data-key="e" class="key black">E</div>
+        <div data-note="F#4" data-key="t" class="key black">T</div>
+        <div data-note="G#4" data-key="y" class="key black">Y</div>
+        <div data-note="A#4" data-key="u" class="key black">U</div>
+        <div data-note="C#5" data-key="o" class="key black">O</div>
+        <div data-note="D#5" data-key="p" class="key black">P</div>
+    </div>
+
+    <div class="controls">
+        <button id="recordButton" class="btn record-btn">Record</button>
+        <button id="playButton" class="btn play-btn" disabled>Play</button>
+    </div>
+
+    <script>
+        // --- Piano Logic ---
+
+        // 1. Setup
+        const synth = new Tone.Synth().toDestination();
+        const keys = document.querySelectorAll('.key');
+        const recordButton = document.getElementById('recordButton');
+        const playButton = document.getElementById('playButton');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        let isRecording = false;
+        let songNotes = [];
+        let recordingStartTime;
+
+        // Map keyboard keys to their corresponding piano key elements
+        const keyMap = {};
+        keys.forEach(key => {
+            keyMap[key.dataset.key] = key;
+        });
+
+        // 2. Playing Notes
+        function playNote(note) {
+            const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+            if (!keyElement) return;
+
+            // Play the sound
+            synth.triggerAttackRelease(note, "8n", Tone.now());
+
+            // Add visual feedback
+            keyElement.classList.add('active');
+            setTimeout(() => keyElement.classList.remove('active'), 200);
+
+            // If recording, save the note and its timestamp
+            if (isRecording) {
+                songNotes.push({
+                    note: note,
+                    time: Date.now() - recordingStartTime
+                });
+            }
+        }
+
+        // 3. Event Listeners for Keyboard
+        window.addEventListener('keydown', e => {
+            // Prevent repeating notes when a key is held down
+            if (e.repeat) return;
+            const keyElement = keyMap[e.key];
+            if (keyElement) {
+                playNote(keyElement.dataset.note);
+            }
+        });
+        
+        // Event listeners for mouse/touch interaction
+        keys.forEach(key => {
+            key.addEventListener('mousedown', () => playNote(key.dataset.note));
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // prevent mouse events from firing
+                playNote(key.dataset.note);
+            });
+        });
+
+        // 4. Recording Logic
+        recordButton.addEventListener('click', () => {
+            isRecording = !isRecording;
+            if (isRecording) {
+                // Start recording
+                songNotes = [];
+                recordingStartTime = Date.now();
+                recordButton.textContent = 'Stop';
+                recordButton.classList.add('recording');
+                statusDisplay.textContent = 'Recording...';
+                playButton.disabled = true;
+            } else {
+                // Stop recording
+                recordButton.textContent = 'Record';
+                recordButton.classList.remove('recording');
+                statusDisplay.textContent = songNotes.length > 0 ? 'Recording finished!' : 'Press a key to play';
+                // Enable play button only if something was recorded
+                playButton.disabled = songNotes.length === 0;
+            }
+        });
+
+        // 5. Playback Logic
+        playButton.addEventListener('click', () => {
+            if (songNotes.length === 0) return;
+
+            // Disable buttons during playback
+            playButton.disabled = true;
+            recordButton.disabled = true;
+            statusDisplay.textContent = 'Playing back...';
+
+            // Get the total duration of the song to re-enable buttons later
+            const lastNoteTime = songNotes[songNotes.length - 1].time;
+
+            songNotes.forEach(noteEvent => {
+                setTimeout(() => {
+                    playNote(noteEvent.note);
+                }, noteEvent.time);
+            });
+            
+            // Re-enable buttons after the song has finished playing
+            setTimeout(() => {
+                playButton.disabled = false;
+                recordButton.disabled = false;
+                statusDisplay.textContent = 'Playback finished!';
+            }, lastNoteTime + 500); // Add a small buffer
+        });
+
+    </script>
+</body>
+</html>
