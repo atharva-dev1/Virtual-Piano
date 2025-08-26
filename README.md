@@ -72,4 +72,3 @@ This project is licensed under the **MIT License** – free to use and modify.
 
 ---
 
-👉 Would you like me to also create the **keyboard mapping table** (like which letter corresponds to which piano key) in the README for better clarity?
