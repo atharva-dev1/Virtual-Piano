@@ -31,8 +31,7 @@ This project allows users to play piano sounds by clicking the keys with a mouse
 
 ## ▶️ Live Demo
 
-[Click here to try the Virtual Piano](#)
-*(Replace `#` with your deployed project link, e.g., GitHub Pages, Netlify, or Vercel)*
+[Click here to try the Virtual Piano](https://atharva-dev1.github.io/Virtual-Piano/)
 
 ---
 
